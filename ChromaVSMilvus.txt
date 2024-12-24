@@ -1,0 +1,109 @@
+1. Milvus supports indexing efficiently billions of vectors, speed is a requirement then milvus scales better than ChromaDB for massive data
+
+2. Indexing options 
+	you want faster approximate search or accurate searches 
+	Hybrid search: you want to search on a vector field or a combination of both vector and simple scalar (value) search, combine vector similarity search and then filter out values not needed with a scalar data filter
+
+3. You could do an Approximate Nearest Neighbour (ANN) search with GPU support with high throughput and low latency
+
+4. Milvus has a distribute architecture, you could scale db to multiple nodes with partitions
+
+5. Supports connectors like K8s, Docker, and cloud platforms like GCP and AWS
+
+6. Scalar data filtering with hybrid queries
+
+7. Milvus supports historical state of data - not sure how we could create versions
+
+
+
+For a small dataset on a single node, the benefits of using Milvus over ChromaDB depend on your specific requirements and priorities. While both are designed for vector search, their features and architectures differ in ways that may or may not align with your use case.
+
+Benefits of Milvus Over ChromaDB for Small Datasets
+1. Advanced Search Customization
+Milvus: Offers a wide range of search algorithms and indexing options (e.g., IVF_FLAT, HNSW, ANNOY), allowing for fine-tuned performance even on small datasets. These indexing options can be useful if you need to experiment with search accuracy and query latency.
+ChromaDB: Provides simpler, more opinionated defaults, but lacks the range of indexing options Milvus offers.
+Benefit: If you want to experiment with or optimize search parameters, Milvus gives you more control.
+
+2. Broader Metric Support
+Milvus: Supports multiple distance metrics like L2 (Euclidean), IP (Inner Product), and Cosine similarity, making it versatile for various vector-based tasks.
+ChromaDB: Primarily focused on simplicity and might not support all distance metrics.
+Benefit: Use Milvus if your task requires a specific similarity metric not supported by ChromaDB.
+
+3. Hybrid Query Capabilities
+Milvus: Allows hybrid queries that combine vector similarity search with scalar filtering (e.g., searching by vector similarity but filtering by metadata like date, category, or range).
+ChromaDB: Supports simpler query types and is more focused on vector search without complex scalar filtering.
+Benefit: Milvus is better for use cases where metadata filtering alongside vector search is essential, such as e-commerce applications or recommendation systems.
+
+4. GPU Acceleration
+Milvus: Can leverage GPUs for faster processing, even on a single node, significantly speeding up query performance on small datasets if you have GPU resources available.
+ChromaDB: Primarily CPU-based and lacks native GPU acceleration.
+Benefit: For computationally intensive tasks or if you have a GPU-enabled machine, Milvus offers better performance.
+
+
+
+
+
+
+1. IVF_FLAT (Inverted File Index with Flat Quantization)
+What is IVF_FLAT?
+IVF_FLAT stands for Inverted File Index with Flat Quantization.
+It divides the vector space into multiple clusters during indexing. Each vector is assigned to its nearest cluster, and queries only search a subset of clusters to reduce search time.
+A brute-force search is performed within the selected clusters.
+Key Parameters
+nlist: Number of clusters (partitions) created during indexing.
+Larger nlist values result in more clusters and higher accuracy but slower indexing and searching.
+Smaller nlist values result in fewer clusters, faster search times, but lower accuracy.
+nprobe: Number of clusters to search during a query.
+Larger nprobe improves recall but increases latency.
+When to Use IVF_FLAT
+Large Datasets: Well-suited for datasets with millions of vectors.
+Trade-off Between Speed and Accuracy: Useful when you want faster search than brute-force but with acceptable recall.
+Applications: Recommendation systems, e-commerce, and image/video search.
+
+
+
+2. HNSW (Hierarchical Navigable Small World)
+What is HNSW?
+HNSW is a graph-based method where vectors are stored as nodes in a hierarchical graph.
+Search queries traverse the graph, starting from a randomly selected entry point and moving closer to the query vector in each step.
+The search uses nearest neighbor connections to efficiently explore a small subset of vectors.
+Key Parameters
+M: Number of bi-directional links per node in the graph.
+Larger M results in higher recall but increases memory usage and indexing time.
+ef_construction: Controls the effort spent during graph construction.
+Larger ef_construction improves graph quality and accuracy but increases indexing time.
+ef: The size of the dynamic candidate list during search.
+Larger ef improves recall but increases search latency.
+When to Use HNSW
+Small to Medium Datasets: Performs best with datasets up to a few million vectors.
+Memory Optimization: Uses less memory than IVF-based indexes for smaller datasets.
+Low Latency Needs: Offers very low latency with high recall for real-time applications.
+Applications: Facial recognition, real-time recommendation, and natural language processing (NLP).
+
+
+
+3. ANNOY (Approximate Nearest Neighbor Oh Yeah)
+What is ANNOY?
+ANNOY uses a random projection tree (RPT) to split the vector space into multiple partitions.
+It performs similarity searches by traversing multiple trees and combining results from them.
+ANNOY prioritizes fast query times over index accuracy.
+Key Parameters
+n_trees: Number of trees to build in the index.
+More trees improve recall but increase index size and creation time.
+search_k: Number of nodes to inspect during a query.
+Larger search_k increases recall but also latency.
+When to Use ANNOY
+Small Datasets: Designed for small to medium-sized datasets (thousands to a few million vectors).
+Fast Index Construction: ANNOY has a very fast index-building process, making it ideal for dynamic or frequently updated datasets.
+Read-Optimized Scenarios: Performs well for applications where queries significantly outnumber updates.
+Applications: Music recommendation, personalized content delivery, or dynamic search scenarios.
+
+
+Feature			IVF_FLAT			HNSW			ANNOY
+---------------------------------------------------------------------------------------------------
+Dataset Size		Large (millions/billions)	Small to medium		Small to medium
+Indexing Speed		Medium				Slow			Fast
+Search Speed		Medium (depends on nprobe)	Very fast		Fast
+Accuracy		High (with high nprobe)		High			Medium
+Memory Usage		High				Medium			Low
+Use Case		Scalable applications		Real-time, high recall	Lightweight, dynamic
